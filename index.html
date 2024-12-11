@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Gift Code Checker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+        }
+        .input-group {
+            margin: 10px 0;
+        }
+        input {
+            padding: 10px;
+            width: 300px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .start-button {
+            background-color: black;
+            color: white;
+        }
+        .stop-button {
+            background-color: #aa8ed6;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>Discord Gift Code Checker</h1>
+    <div class="input-group">
+        <label for="webhook-url">Your Webhook URL:</label><br>
+        <input type="text" id="webhook-url" placeholder="Enter your webhook URL">
+    </div>
+    <div class="input-group">
+        <label for="discord-username">Your Discord Username:</label><br>
+        <input type="text" id="discord-username" placeholder="Enter your username">
+    </div>
+    <button class="start-button" id="start">Start</button>
+    <button class="stop-button" id="stop">Stop</button>
+
+    <script>
+        let isRunning = false;
+
+        // Function to generate a random alphanumeric string of length 16-18
+        function generateCode() {
+            const length = Math.floor(Math.random() * 3) + 16; // 16 to 18
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        // Function to check the code via the API
+        async function checkCode(code) {
+            const url = `https://discordapp.com/api/v9/entitlements/gift-codes/${code}?with_application=false&with_subscription_plan=true`;
+
+            try {
+                const response = await fetch(url);
+
+                if (response.status === 200) {
+                    const webhookUrl = document.getElementById('webhook-url').value;
+                    const username = document.getElementById('discord-username').value;
+
+                    if (webhookUrl && username) {
+                        // Send valid code to Discord webhook
+                        await fetch(webhookUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                content: `@${username}, valid code found: ${url}`
+                            })
+                        });
+                    } else {
+                        console.error('Webhook URL or username not set.');
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking code:', error);
+            }
+        }
+
+        // Start the process
+        document.getElementById('start').addEventListener('click', () => {
+            if (isRunning) return;
+            isRunning = true;
+
+            (async function run() {
+                while (isRunning) {
+                    const code = generateCode();
+                    await checkCode(code);
+                    await new Promise(resolve => setTimeout(resolve, 100)); // Slight delay
+                }
+            })();
+        });
+
+        // Stop the process
+        document.getElementById('stop').addEventListener('click', () => {
+            isRunning = false;
+        });
+    </script>
+</body>
+</html>
